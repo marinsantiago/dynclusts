@@ -206,6 +206,7 @@ dynclusts_sim <- function(n.obs, time.points, n.clusts = 3L, n.covariates = 5L,
     y = y, S = S, coords = coords, geopoints.out = geopoints.out, n.obs = n.obs,
     country = country, theta = theta, sigma2 = sigma2, time.points = time.points
   )
+  out[["X"]] = X
   if (spatial.effect) {
     out[["gamma"]] = gamma.
     out[["K"]] = K
@@ -215,7 +216,6 @@ dynclusts_sim <- function(n.obs, time.points, n.clusts = 3L, n.covariates = 5L,
   if (covariates.effect) {
     out[["beta"]] = beta.
     out[["rho2"]] = rho2
-    out[["X"]] = X
     out[["n.covariates"]] = n.covariates
   }
   class(out) <- "dynclust.sim"
