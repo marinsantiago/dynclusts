@@ -29,6 +29,7 @@ dynclust(
   store.nu = TRUE,
   store.epsilon = TRUE,
   store.lambda = TRUE,
+  disjoint.theta.sigma2 = TRUE,
   verbose = TRUE,
   max.iters = 20000L,
   burn.in = 10000L,
@@ -115,6 +116,10 @@ parameter epsilon are stored and returned. Default is \code{TRUE}.}
 
 \item{store.lambda}{Logical. If \code{TRUE}, the posterior draws from the 
 parameter lambda are stored and returned. Default is \code{TRUE}.}
+
+\item{disjoint.theta.sigma2}{Logical. If \code{TRUE}, an AR-LB-SG process 
+prior is placed only on theta. If \code{FALSE}, an AR-LB-SG process prior
+is placed jointly on (theta, sigma2). Default is \code{TRUE}.}
 
 \item{verbose}{Logical. If \code{TRUE}, a progress bar is displayed on the
 console. Default is \code{TRUE}.}

@@ -71,16 +71,29 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// dnormal
-Eigen::ArrayXXd dnormal(const Eigen::ArrayXXd& y, const Eigen::ArrayXXd& mu, const double sigma2);
-RcppExport SEXP _dynclusts_dnormal(SEXP ySEXP, SEXP muSEXP, SEXP sigma2SEXP) {
+// dnormal_disjoint
+Eigen::ArrayXXd dnormal_disjoint(const Eigen::ArrayXXd& y, const Eigen::ArrayXXd& mu, const Eigen::ArrayXXd& sigma2);
+RcppExport SEXP _dynclusts_dnormal_disjoint(SEXP ySEXP, SEXP muSEXP, SEXP sigma2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::ArrayXXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXXd& >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXXd& >::type sigma2(sigma2SEXP);
+    rcpp_result_gen = Rcpp::wrap(dnormal_disjoint(y, mu, sigma2));
+    return rcpp_result_gen;
+END_RCPP
+}
+// dnormal_joint
+Eigen::ArrayXXd dnormal_joint(const Eigen::ArrayXXd& y, const Eigen::ArrayXXd& mu, const double sigma2);
+RcppExport SEXP _dynclusts_dnormal_joint(SEXP ySEXP, SEXP muSEXP, SEXP sigma2SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::ArrayXXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< const Eigen::ArrayXXd& >::type mu(muSEXP);
     Rcpp::traits::input_parameter< const double >::type sigma2(sigma2SEXP);
-    rcpp_result_gen = Rcpp::wrap(dnormal(y, mu, sigma2));
+    rcpp_result_gen = Rcpp::wrap(dnormal_joint(y, mu, sigma2));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -230,7 +243,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_dynclusts_solve_upper_bidiagonal", (DL_FUNC) &_dynclusts_solve_upper_bidiagonal, 3},
     {"_dynclusts_logdens_psi", (DL_FUNC) &_dynclusts_logdens_psi, 5},
     {"_dynclusts_logdens_varphi", (DL_FUNC) &_dynclusts_logdens_varphi, 9},
-    {"_dynclusts_dnormal", (DL_FUNC) &_dynclusts_dnormal, 3},
+    {"_dynclusts_dnormal_disjoint", (DL_FUNC) &_dynclusts_dnormal_disjoint, 3},
+    {"_dynclusts_dnormal_joint", (DL_FUNC) &_dynclusts_dnormal_joint, 3},
     {"_dynclusts_haver_dist", (DL_FUNC) &_dynclusts_haver_dist, 1},
     {"_dynclusts_int_sampling", (DL_FUNC) &_dynclusts_int_sampling, 3},
     {"_dynclusts_int_sampling_rows", (DL_FUNC) &_dynclusts_int_sampling_rows, 1},

@@ -17,8 +17,12 @@ logdens_varphi <- function(varphi, logdet_K_check, K_check_inv, K_check, D, gamm
     .Call('_dynclusts_logdens_varphi', PACKAGE = 'dynclusts', varphi, logdet_K_check, K_check_inv, K_check, D, gamm, tau2, a_phi, b_phi)
 }
 
-dnormal <- function(y, mu, sigma2) {
-    .Call('_dynclusts_dnormal', PACKAGE = 'dynclusts', y, mu, sigma2)
+dnormal_disjoint <- function(y, mu, sigma2) {
+    .Call('_dynclusts_dnormal_disjoint', PACKAGE = 'dynclusts', y, mu, sigma2)
+}
+
+dnormal_joint <- function(y, mu, sigma2) {
+    .Call('_dynclusts_dnormal_joint', PACKAGE = 'dynclusts', y, mu, sigma2)
 }
 
 haver_dist <- function(coords) {

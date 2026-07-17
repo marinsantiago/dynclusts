@@ -61,7 +61,10 @@
 #' @param store.epsilon Logical. If \code{TRUE}, the posterior draws from the 
 #'    parameter epsilon are stored and returned. Default is \code{TRUE}.   
 #' @param store.lambda Logical. If \code{TRUE}, the posterior draws from the 
-#'    parameter lambda are stored and returned. Default is \code{TRUE}.   
+#'    parameter lambda are stored and returned. Default is \code{TRUE}.
+#' @param disjoint.theta.sigma2 Logical. If \code{TRUE}, an AR-LB-SG process 
+#'    prior is placed only on theta. If \code{FALSE}, an AR-LB-SG process prior
+#'    is placed jointly on (theta, sigma2). Default is \code{TRUE}.
 #' @param verbose Logical. If \code{TRUE}, a progress bar is displayed on the
 #'    console. Default is \code{TRUE}.
 #' @param max.iters A positive integer corresponding to the total number of 
@@ -137,7 +140,8 @@ dynclust <- function(y, coords, X, theta.0, sigma2.0, a.0, b.0,
                      b.rho = 0.1, a.tau = 0.1, b.tau = 0.1, 
                      sigma.phi_mh = sqrt(5.7), sigma.psi_mh = sqrt(0.001), 
                      H = 25L, Sg = TRUE, post.pred = TRUE, store.nu = TRUE, 
-                     store.epsilon = TRUE, store.lambda = TRUE, verbose = TRUE,
+                     store.epsilon = TRUE, store.lambda = TRUE, 
+                     disjoint.theta.sigma2 = TRUE, verbose = TRUE,
                      max.iters = 20000L, burn.in  = 10000L, thin = 2L) {
   
   # Input validation -----------------------------------------------------------
@@ -157,8 +161,8 @@ dynclust <- function(y, coords, X, theta.0, sigma2.0, a.0, b.0,
     b.phi = b.phi, a.rho = a.rho, b.rho = b.rho, a.tau = a.tau, b.tau = b.tau,
     sigma.phi_mh = sigma.phi_mh, sigma.psi_mh = sigma.psi_mh, H = H, Sg = Sg, 
     post.pred = post.pred, store.nu = store.nu, store.epsilon = store.epsilon,
-    store.lambda = store.lambda, verbose = verbose, max.iters = max.iters,
-    burn.in = burn.in, thin = thin
+    store.lambda = store.lambda, disjoint.theta.sigma2 = disjoint.theta.sigma2,
+    verbose = verbose, max.iters = max.iters, burn.in = burn.in, thin = thin
   )
   # Prepare the returns --------------------------------------------------------
   dims.y <- dim(y)

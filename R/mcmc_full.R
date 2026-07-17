@@ -2,10 +2,10 @@
 # MCMC algorithm
 # ------------------------------------------------------------------------------
 
-mcmc_sampler <- function(y, coords, X, theta.0, sigma2.0, a.0, b.0, 
-                         a.alpha, b.alpha, a.phi, b.phi, a.rho, b.rho, 
-                         a.tau, b.tau, sigma.phi_mh, sigma.psi_mh, H, Sg, 
-                         post.pred, store.nu, store.epsilon, store.lambda, 
+mcmc_sampler <- function(y, coords, X, theta.0, sigma2.0, a.0, b.0, a.alpha,
+                         b.alpha, a.phi, b.phi, a.rho, b.rho, a.tau, b.tau, 
+                         sigma.phi_mh, sigma.psi_mh, H, Sg, post.pred, store.nu,
+                         store.epsilon, store.lambda, disjoint.theta.sigma2,
                          verbose, max.iters, burn.in, thin) {
   
   # Pre-compute constants ------------------------------------------------------
@@ -69,12 +69,19 @@ mcmc_sampler <- function(y, coords, X, theta.0, sigma2.0, a.0, b.0,
   }
   K.tot <- row_unique_counts(S)
   # Generate theta and sigma2
-  theta.candidates <- seq(min(y) + adj, max(y) - adj, length.out = H)
-  sigma2.candidates <- pmax(1 / rgamma(H, shape = a.0, rate = b.0), adj)
-  theta <- sigma2 <- matrix(nrow = T.tot, ncol = n)
-  for (i in seq_len(n)) {
-    theta[,i] <- theta.candidates[S[,i]]
-    sigma2[,i] <- sigma2.candidates[S[,i]]
+  if (disjoint.theta.sigma2) {
+    theta <- matrix(nrow = T.tot, ncol = n)
+    theta.candidates <- seq(min(y) + adj, max(y) - adj, length.out = H)
+    for (i in seq_len(n)) theta[,i] <- theta.candidates[S[,i]]
+    sigma2 <- matrix(1, nrow = T.tot, ncol = n)
+  } else {
+    theta <- sigma2 <- matrix(nrow = T.tot, ncol = n)
+    theta.candidates <- seq(min(y) + adj, max(y) - adj, length.out = H)
+    sigma2.candidates <- pmax(1 / rgamma(H, shape = a.0, rate = b.0), adj)
+    for (i in seq_len(n)) {
+      theta[,i] <- theta.candidates[S[,i]]
+      sigma2[,i] <- sigma2.candidates[S[,i]]
+    }
   }
   # MCMC algorithm -------------------------------------------------------------
   if (verbose) {
@@ -86,23 +93,43 @@ mcmc_sampler <- function(y, coords, X, theta.0, sigma2.0, a.0, b.0,
   start <- Sys.time() # Start wall-clock time
   for (iter in seq_len(max.iters)) {
     if (verbose) pb$tick()
-    # Update cluster indicators
-    S <- update_clusters(
-      y = y, X.underbar = X.underbar, H = H, omega = omega, 
-      gamma. = gamma., beta. = beta., theta.candidates, sigma2.candidates
-    )
-    K.tot <- row_unique_counts(S)
-    # Update theta and sigma2
-    theta.sigma2.candidates <- update_theta_sigma2(
-      y = y, X.underbar = X.underbar, S = S, H = H, beta. = beta., 
-      gamma. = gamma., theta = theta, sigma2 = sigma2, theta.0 = theta.0,
-      sigma2.0 = sigma2.0, a.0 = a.0, b.0 = b.0
-    )
-    theta.candidates <- theta.sigma2.candidates$theta.out
-    sigma2.candidates <- theta.sigma2.candidates$sigma2.out
-    for (i in seq_len(n)) {
-      theta[,i] <- theta.candidates[S[,i]]
-      sigma2[,i] <- sigma2.candidates[S[,i]]
+    if (disjoint.theta.sigma2) {
+      # Update cluster indicators
+      S <- update_clusters_disjoint(
+        y = y, X.underbar = X.underbar, H = H, omega = omega,
+        gamma. = gamma., beta. = beta., theta.candidates, sigma2
+      )
+      K.tot <- row_unique_counts(S)
+      # Update theta
+      theta.candidates <- update_theta_disjoint(
+        y = y, X.underbar = X.underbar, S = S, H = H, beta. = beta.,
+        gamma. = gamma., sigma2 = sigma2, theta.0 = theta.0, sigma2.0 = sigma2.0
+      )
+      for (i in seq_len(n)) theta[,i] <- theta.candidates[S[,i]]
+      # Update sigma2
+      sigma2 <- update_sigma2_disjoint(
+        y = y, X.underbar = X.underbar, beta. = beta., gamma. = gamma.,
+        theta = theta, a.0 = a.0, b.0 = b.0
+      )
+    } else {
+      # Update cluster indicators
+      S <- update_clusters_joint(
+        y = y, X.underbar = X.underbar, H = H, omega = omega, 
+        gamma. = gamma., beta. = beta., theta.candidates, sigma2.candidates
+      )
+      K.tot <- row_unique_counts(S)
+      # Update theta and sigma2
+      theta.sigma2.candidates <- update_theta_sigma2(
+        y = y, X.underbar = X.underbar, S = S, H = H, beta. = beta., 
+        gamma. = gamma., sigma2 = sigma2, theta.0 = theta.0,
+        sigma2.0 = sigma2.0, a.0 = a.0, b.0 = b.0
+      )
+      theta.candidates <- theta.sigma2.candidates$theta.out
+      sigma2.candidates <- theta.sigma2.candidates$sigma2.out
+      for (i in seq_len(n)) {
+        theta[,i] <- theta.candidates[S[,i]]
+        sigma2[,i] <- sigma2.candidates[S[,i]]
+      }
     }
     # Update beta
     beta. <- update_beta(
