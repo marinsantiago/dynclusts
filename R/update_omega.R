@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# Update the stick-breaking weights, omega
+# Update the stick-breaking weights, i.e., omega
 # ------------------------------------------------------------------------------
 
 update_omega <- function(S, alpha, lambda, psi, epsilon) {
@@ -10,7 +10,7 @@ update_omega <- function(S, alpha, lambda, psi, epsilon) {
   n <- dims.S[2]
   H1 <- ncol(epsilon) # H-1
   H <- H1 + 1
-  psi2 <- psi^2 # Scalar
+  psi2 <- psi^2 # scalar
   Psi <- toeplitz(psi^(0:(T.tot - 1L)))
   # Iterate over clusters (up to H-1) ------------------------------------------
   epsilon.out <- lambda.out <- matrix(NA, nrow = T.tot, ncol = H1)
@@ -18,131 +18,104 @@ update_omega <- function(S, alpha, lambda, psi, epsilon) {
     # Get latent binomial variables --------------------------------------------
     I.idx <- S > k - 1
     Z.idx <- S == k
-    m.idx <- Rfast::rowsums(I.idx)
-    r.idx <- Rfast::rowsums(Z.idx)
-    if (sum(m.idx) > 0) { # Make sure there is at least one time index
-      # Step 1: Polya-gamma sampling -------------------------------------------
-      xi <- rep(0, T.tot)
-      # Two types of Polya-gamma samplers:
-      # 1. Devroye-like (when m.k is a small integer)
-      # 2. Saddle point approximation (otherwise)
-      small.m <- (m.idx > 0 & m.idx <= 3); T.small <- sum(small.m)
-      large.m <- (m.idx > 3L); T.large <- sum(large.m)
-      if (T.small > 0) {
-        xi[small.m] <- BayesLogit::rpg.devroye(
-          T.small, m.idx[small.m], epsilon[small.m, k]
-        )
-      }
-      if (T.large > 0) {
-        xi[large.m] <- BayesLogit::rpg.sp(
-          T.large, m.idx[large.m], epsilon[large.m, k]
-        )
-      }
-      xi <- pmax(xi, 1e-08)
-      # Step 2: Metropolis-Hastings step  --------------------------------------
-      idx.omit <- m.idx == 0
-      idx.keep <- !idx.omit
-      T.k <- sum(idx.keep)
-      xi.k <- xi[idx.keep]
-      m.k <- m.idx[idx.keep]
-      r.k <- r.idx[idx.keep]
-      Psi.k <- Psi[idx.keep, idx.keep] |> as.matrix()
-      alpha.k <- alpha[idx.keep]
-      lambda.k <- lambda[idx.keep, k]
+    m_k <- Rfast::rowsums(I.idx)
+    r_k <- Rfast::rowsums(Z.idx)
+    # Step 1: Polya-gamma sampling ---------------------------------------------
+    xi <- rep(0, T.tot) # Sets to zero entries for which m_k == 0
+    # Two types of Polya-gamma samplers:
+    # (a). Devroye-like (when m.k is a small integer)
+    # (b). Saddle point approximation (otherwise)
+    small.m <- (m_k > 0 & m_k <= 3); T.small <- sum(small.m)
+    large.m <- (m_k > 3L); T.large <- sum(large.m)
+    if (T.small > 0) {
+      xi[small.m] <- pmax(
+        BayesLogit::rpg.devroye(T.small, m_k[small.m], epsilon[small.m, k]), 
+        1e-20
+      )
+    }
+    if (T.large > 0) {
+      xi[large.m] <- pmax(
+        BayesLogit::rpg.sp(T.large, m_k[large.m], epsilon[large.m, k]), 1e-20
+      )
+    }
+    # Step 2: Metropolis-Hastings step  ----------------------------------------
+    idx.omit <- m_k == 0; T.omit <- sum(idx.omit)
+    idx.keep <- !idx.omit; T.k <- sum(idx.keep)
+    if (T.omit > 0) {
+      # Sample the lambdas for which m_k == 0 straight from the prior
+      alpha.omit <- alpha[idx.omit]
+      lambda.out[idx.omit, k] <- vapply(alpha.omit, \(a) rpolya(1, a), 1)
+    }
+    if (T.k > 0) {
+      # M-H update for lambdas
+      xi.keep <- xi[idx.keep]
+      m.keep <- m_k[idx.keep]
+      r.keep <- r_k[idx.keep]
+      alpha.keep <- alpha[idx.keep]
+      lambda.keep <- lambda[idx.keep, k]
+      Psi.keep <- as.matrix(Psi[idx.keep, idx.keep])
       # Generate the proposals
-      proposals <- rand_polya_proposal(rep(1, T.k), alpha.k, lambda.k)
-      lambda.star.k <- pmax(proposals[1,], 1e-08)
-      # Evaluate "L" densities
-      adj <- diag(T.k) * 1e-07
-      xi.inv <- 1 / xi.k
-      eval.point <- xi.inv * (r.k - m.k / 2)
-      center.current <- eval.point - (lambda.k * (1 - alpha.k) / 2)
-      center.star <- eval.point - (lambda.star.k * (1 - alpha.k) / 2)
-      xi.inv.mat <- if (T.k > 1) diag(xi.inv) else xi.inv
-      cov.current <- Psi.k * tcrossprod(sqrt(lambda.k)) + xi.inv.mat + adj
-      cov.star <- Psi.k * tcrossprod(sqrt(lambda.star.k)) + xi.inv.mat + adj
-      log.L.current <- lambda_ratio_log_l(center.current, cov.current)
-      log.L.star <- lambda_ratio_log_l(center.star, cov.star)
-      # M-H acceptance ratio
+      proposals <- rand_polya_proposal(rep(1, T.k), alpha.keep, lambda.keep)
+      lambda.star.k <- pmax(proposals[1,], 1e-10)
       a.prime <- proposals[2,]
       b.prime <- proposals[3,]
-      log.L.diff <- log.L.star - log.L.current
-      oo. <- sum((alpha.k - a.prime * b.prime) * (lambda.k - lambda.star.k)) / 2
-      log.r <- log.L.diff + oo.
+      # Evaluate "L" functions
+      adj <- diag(T.k) * 1e-10
+      xi.inv <- 1 / xi.keep
+      eval.point <- xi.inv * (r.keep - m.keep / 2)
+      center.current <- eval.point - (lambda.keep * (1 - alpha.keep) / 2)
+      center.star <- eval.point - (lambda.star.k * (1 - alpha.keep) / 2)
+      xi.inv.mat <- if (T.k > 1) diag(xi.inv) else xi.inv
+      cov.current <- Psi.keep * tcrossprod(sqrt(lambda.keep)) + xi.inv.mat + adj
+      cov.star <- Psi.keep * tcrossprod(sqrt(lambda.star.k)) + xi.inv.mat + adj
+      L.current <- lambda_ratio_log_l(center.current, cov.current)
+      L.star <- lambda_ratio_log_l(center.star, cov.star)
+      # M-H acceptance ratio
+      L.diff <- L.star - L.current
+      temp.. <- sum(
+        (alpha.keep - a.prime * b.prime) * (lambda.keep - lambda.star.k) / 2
+      )
+      log.r <- L.diff + temp..
       # Decision rule
-      lambda.out[idx.keep, k] <- if (log(runif(1)) < log.r) {
-        lambda.star.k
-      } else { lambda.k }
-      # Sample the remaining lambdas, if any, straight from the prior
-      T.omit <- sum(idx.omit)
-      if (T.omit > 0) {
-        lambda.out[idx.omit, k] <- vapply(
-          seq_len(T.omit), \(t) rpolya(1, alpha[t]), 1
+      lambda.MH <- if (log(runif(1)) < log.r) lambda.star.k else lambda.keep
+      lambda.out[idx.keep, k] <- lambda.MH
+    }
+    # Step 3: MVN sampler ------------------------------------------------------
+    # Note that Psi is a toeplitz matrix, so its inverse is tri-diagonal
+    # Main diagonal:
+    Psi.inv.diag <- rep(NA, T.tot)
+    Psi.inv.diag[c(1, T.tot)] <- 1 / (1 - psi2)
+    Psi.inv.diag[-c(1, T.tot)] <- (1 + psi2) / (1 - psi2)
+    # Super diagonal:
+    Psi.inv.u.diag <- rep(-psi, T.tot - 1) / (1 - psi2)
+    # Compute Lambda^{-1/2} %*% Psi^{-1} %*% Lambda^{-1/2}, which is tri-diag
+    lambda.sqrt.inv <- 1 / sqrt(pmax(lambda.out[,k], 1e-07))
+    mm.diag <- lambda.sqrt.inv^2 * Psi.inv.diag 
+    mm.u.diag <- lambda.sqrt.inv[-1] * Psi.inv.u.diag * lambda.sqrt.inv[-T.tot]
+    # Since Xi is diagonal, the precision Xi + M is also tri-diagonal
+    post.prec.diag <- mm.diag + xi
+    post.prec.u.diag <- mm.u.diag
+    # Compute the parameter vector
+    bin.counts <- r_k - m_k / 2
+    l.alpha <- lambda.out[,k] * (1 - alpha) / 2 # diag(lambda) %*% (1 - alpha)/2
+    # Compute (Lambda^{-1/2} %*% Psi^{-1} %*% Lambda^{-1/2}) %*% l.alpha
+    l.alpha.adj <- l.alpha * mm.diag
+    l.alpha.adj[-T.tot] <- l.alpha.adj[-T.tot] + mm.u.diag * l.alpha[-1]
+    l.alpha.adj[-1] <- l.alpha.adj[-1] + mm.u.diag * l.alpha[-T.tot]
+    param.vec <- bin.counts + l.alpha.adj
+    # Sample from the MVN distribution exploiting the tri-diagonal precision
+    eps.new <- tryCatch(
+      { rand_mvn_tridiag(param.vec, post.prec.diag, post.prec.u.diag) }, 
+      error = \(e) {
+        # If needed, enforce SPD precision matrix
+        rand_mvn_tridiag(
+          param.vec, 
+          make.posdef.tridiag(post.prec.diag, post.prec.u.diag), 
+          post.prec.u.diag
         )
       }
-      # Step 3: MVN sampler ----------------------------------------------------
-      # Note that Psi is an AR(1) matrix, so its inverse is tri-diagonal
-      # Main diagonal:
-      Psi.inv.diag <- rep(NA, T.tot) 
-      Psi.inv.diag[c(1, T.tot)] <- 1 / (1 - psi2)
-      Psi.inv.diag[-c(1, T.tot)] <- (1 + psi2) / (1 - psi2)
-      # Super diagonal:
-      Psi.inv.u.diag <- rep(-psi, T.tot - 1) / (1 - psi2)
-      # Compute Lambda^{-1/2} %*% Psi^{-1} %*% Lambda^{-1/2}, which is tri-diag
-      lambda.sqrt.inv <- 1 / sqrt(pmax(lambda.out[,k], 1e-07))
-      m.diag <- lambda.sqrt.inv^2 * Psi.inv.diag 
-      m.u.diag <- lambda.sqrt.inv[-T.tot] * Psi.inv.u.diag * lambda.sqrt.inv[-1]
-      # Since Xi is diagonal, the precision Xi + M is also tri-diagonal
-      # For the diagonal entries in which m.k != 0, add Xi (from step 1)
-      xi.diag <- rep(0, T.tot)
-      xi.diag[idx.keep] <- xi.k
-      post.prec.diag <- m.diag + xi.diag
-      post.prec.u.diag <- m.u.diag
-      # Compute the parameter vector
-      alpha.diff <- (1 - alpha)
-      P.inv.alph <- Psi.inv.diag * alpha.diff # Psi^{-1} %*% (1 - alpha)
-      P.inv.alph[-1] <- P.inv.alph[-1] + Psi.inv.u.diag * alpha.diff[-T.tot]
-      P.inv.alph[-T.tot] <- P.inv.alph[-T.tot] + Psi.inv.u.diag * alpha.diff[-1]
-      binomial.counts <- rep(0, T.tot) # For the entries in which m.k != 0
-      binomial.counts[idx.keep] <- r.k - m.k / 2
-      param.vec <- binomial.counts + P.inv.alph / 2
-      # Sample from the MVN distribution exploiting the tri-diagonal precision
-      eps.new <- tryCatch(
-        { rand_mvn_tridiag(param.vec, post.prec.diag, post.prec.u.diag) }, 
-        error = \(e) {
-          # If needed, enforce SPD precision matrix
-          rand_mvn_tridiag(
-            param.vec, 
-            make.posdef.tridiag(post.prec.diag, post.prec.u.diag), 
-            post.prec.u.diag
-          )
-        }
-      )
-      epsilon.out[,k] <- eps.new
-    } else {
-      # If all the indices are empty, sample epsilon_k straight from the prior
-      lambda.m.zero <- vapply(T.tot, \(t) rpolya(1, alpha[t]), 1) # prior draw 
-      lambda.out[, k] <- lambda.m.zero
-      # Note that Psi is an AR(1) matrix, so its inverse is tri-diagonal
-      # Main diagonal:
-      Psi.inv.diag <- rep(NA, T.tot) 
-      Psi.inv.diag[c(1, T.tot)] <- 1 / (1 - psi2)
-      Psi.inv.diag[-c(1, T.tot)] <- (1 + psi2) / (1 - psi2)
-      # Super diagonal:
-      Psi.inv.u.diag <- rep(-psi, T.tot - 1) / (1 - psi2)
-      # Again, note that the prior precision is tri-diagonal!
-      la.sqrt.inv <- 1 / sqrt(pmax(lambda.out[,k], 1e-07))
-      prec.diag <- la.sqrt.inv^2 * Psi.inv.diag + 1e-06
-      prec.u.diag <- la.sqrt.inv[-T.tot] * Psi.inv.u.diag * la.sqrt.inv[-1]
-      # Compute the parameter vector
-      alpha.diff <- (1 - alpha)
-      P.inv.alph <- Psi.inv.diag * alpha.diff # Psi^{-1} %*% (1 - alpha)
-      P.inv.alph[-1] <- P.inv.alph[-1] + Psi.inv.u.diag * alpha.diff[-T.tot]
-      P.inv.alph[-T.tot] <- P.inv.alph[-T.tot] + Psi.inv.u.diag * alpha.diff[-1]
-      param.vec <- P.inv.alph / 2
-      # Sample from the MVN distribution exploiting the tri-diagonal precision
-      epsilon.out[,k] <- rand_mvn_tridiag(param.vec, prec.diag, prec.u.diag)
-    }
+    )
+    epsilon.out[,k] <- eps.new
   }
   # Compute nu -----------------------------------------------------------------
   nu.out <- matrix(NA, nrow = T.tot, ncol = H)
@@ -159,6 +132,6 @@ update_omega <- function(S, alpha, lambda, psi, epsilon) {
   # Prepare the returns --------------------------------------------------------
   list(
     omega.out = omega.out, nu.out = nu.out, 
-    epsilon.out = epsilon.out, lamda.out = lambda.out
-  )
+    epsilon.out = epsilon.out, lambda.out = lambda.out
+  ) 
 }

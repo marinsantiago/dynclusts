@@ -46,7 +46,7 @@ If you use any part of this code in your work, please consider citing our paper:
 
 ```
 @misc{marin_dynclusts,
-  title         = {{B}ayesian nonparametric modeling of dynamic pollution clusters through an autoregressive logistic-beta {S}tirling-gamma process}, 
+  title         = {Bayesian nonparametric modeling of dynamic pollution clusters through an autoregressive logistic-beta Stirling-gamma process}, 
   author        = {Santiago Marin and Bronwyn Loong and Anton H. Westveld},
   year          = {2026},
   eprint        = {2601.04625},
