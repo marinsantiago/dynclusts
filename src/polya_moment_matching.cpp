@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------------
-// Random draws from a Polya proposal, where the parameters are set via
-// moment matching
+// Random draws from a Polya proposal.
+// Note: The parameters are set via moment matching
 // -----------------------------------------------------------------------------
 
 #include <RcppEigen.h>

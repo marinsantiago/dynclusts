@@ -50,7 +50,7 @@ mcmc_sampler <- function(y, coords, X, theta.0, sigma2.0, a.0, b.0,
   epsilon <- lambda <- matrix(nrow = T.tot, ncol = H - 1)
   for (k in seq_len(H - 1)) {
     epsilon[,k] <- arima.sim(n = T.tot, model = list(ar = psi))
-    lambda[,k] <- vapply(seq_len(T.tot), \(t) rpolya(1, alpha[t]), 1)
+    lambda[,k] <- vapply(alpha, \(a) rpolya(1, a), 1)
   }
   nu <- matrix(nrow = T.tot, ncol = H)
   nu[,seq_len(H - 1)] <- inv.logit(epsilon)
@@ -120,7 +120,7 @@ mcmc_sampler <- function(y, coords, X, theta.0, sigma2.0, a.0, b.0,
     )
     nu <- stick.weights$nu.out
     omega <- stick.weights$omega.out
-    lambda <- stick.weights$lamda.out
+    lambda <- stick.weights$lambda.out
     epsilon <- stick.weights$epsilon.out
     # Update rho2
     rho2 <- update_rho2(beta. = beta., a.rho = a.rho, b.rho = b.rho)
