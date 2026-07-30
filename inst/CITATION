@@ -1,0 +1,12 @@
+bibentry(
+  bibtype = "Article",
+  title   = "Bayesian nonparametric modeling of dynamic pollution clusters through an autoregressive logistic-beta Stirling-gamma process",
+  author  = "Santiago Marin and Bronwyn Loong and Anton H. Westveld",
+  journal = "arXiv",
+  year    = "2026",
+  volume  = "",
+  number  = "",
+  pages   = "",
+  doi     = "",
+  header  = "To cite dynclusts in publications please use:"
+)
