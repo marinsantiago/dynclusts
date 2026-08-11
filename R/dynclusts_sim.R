@@ -103,7 +103,7 @@ dynclusts_sim <- function(n.obs, time.points, n.clusts = 3L, n.covariates = 5L,
     }
   }
   geopoints.out <- sf::st_as_sf(do.call(c, points))
-  # Matrix of geographical coordinates -----------------------------------------
+  # Matrix of geographical coordinates
   coords <- do.call(rbind, lapply(points, `[[`, 1L))
   colnames(coords) <- c("longitude", "latitude")
   # Generate covariates --------------------------------------------------------

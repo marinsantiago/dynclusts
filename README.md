@@ -11,8 +11,8 @@
 
 ## Overview
 
-The R package `dynclusts` (developer's version) performs dynamic clustering through an 
-[autoregressive logistic-beta Stirling-gamma process](https://arxiv.org/abs/2601.04625) 
+The R package `dynclusts` (developer's version) performs Bayesian nonparametric dynamic
+clustering through an [autoregressive logistic-beta Stirling-gamma process](https://arxiv.org/abs/2601.04625) 
 as described in Marin et al. (2026+).
 
 ## Installation
