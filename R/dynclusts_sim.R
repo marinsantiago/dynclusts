@@ -155,7 +155,7 @@ dynclusts_sim <- function(n.obs, time.points, n.clusts = 3L, n.covariates = 5L,
       } else {
         # Update the probabilities of each cluster
         probs <- if (!balanced) {
-          if (tt %% 2 == 0) c(p.large, p.rest) else c(p.rest, p.large)
+          if (tt <= time.points / 2) c(p.large, p.rest) else c(p.rest, p.large)
         } else { p.equal }
         # Jump to a new cluster with the updated cluster probabilities
         S[tt, ii] <- int_sampling(n.clusts, 1, probs)
