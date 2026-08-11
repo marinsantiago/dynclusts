@@ -14,7 +14,7 @@ dynclusts_sim(
   rho2 = 1,
   varphi = 100,
   sigma2 = 1,
-  pi.stay = 0.3,
+  pi.stay = 0.75,
   balanced = FALSE,
   spatial.effect = TRUE,
   covariates.effect = TRUE
@@ -44,7 +44,7 @@ Default is \code{100}.}
 Default is \code{1}.}
 
 \item{pi.stay}{Probability that a given station will remain in the same 
-cluster from one time point to another. Default is \code{0.3}.}
+cluster from one time point to another. Default is \code{0.75}.}
 
 \item{balanced}{logical. Whether cluster sizes should be balanced or not.}
 
