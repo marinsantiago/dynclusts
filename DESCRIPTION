@@ -45,7 +45,7 @@ Depends: R (>= 4.5.0)
 Encoding: UTF-8
 RoxygenNote: 7.3.3
 NeedsCompilation: yes
-Packaged: 2026-08-11 05:18:14 UTC; santiago
+Packaged: 2026-08-11 05:51:47 UTC; santiago
 Author: Santiago Marin [aut, cre] (ORCID:
     <https://orcid.org/0009-0006-0086-3721>),
   Bronwyn Loong [ctb] (ORCID: <https://orcid.org/0000-0002-1409-8892>),
