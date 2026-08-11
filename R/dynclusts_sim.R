@@ -15,10 +15,8 @@
 #'    Default is \code{100}.
 #' @param sigma2 Sampling variance, assumed to be common across all clusters. 
 #'    Default is \code{1}.
-#' @param prob.jump Probability of jumping, \eqn{\pi_{\text{jump}}}. Default is 
-#'    \code{0.2}.
-#' @param prob.pow Power to which \code{prob.jump} is elevated to. Default is
-#'    \code{0.25}.
+#' @param pi.stay Probability that a given station will remain in the same 
+#'    cluster from one time point to another. Default is \code{0.3}.
 #' @param balanced logical. Whether cluster sizes should be balanced or not. 
 #' @param spatial.effect logical. Whether spatial effects should be
 #'    incorporated.
@@ -63,17 +61,14 @@
 #'
 dynclusts_sim <- function(n.obs, time.points, n.clusts = 3L, n.covariates = 5L,
                           country = "United Kingdom", tau2 = 2, rho2 = 1, 
-                          varphi = 100, sigma2 = 1, prob.jump = 0.2, 
-                          prob.pow = 0.25,  balanced = TRUE, 
-                          spatial.effect = TRUE, covariates.effect = TRUE) {
+                          varphi = 100, sigma2 = 1, pi.stay = 0.3, 
+                          balanced = FALSE,spatial.effect = TRUE, 
+                          covariates.effect = TRUE) {
   
   # Input validation -----------------------------------------------------------
   input.validation.dynclust.sim(
-    n.obs = n.obs, time.points = time.points, n.clusts = n.clusts,
-    n.covariates = n.covariates, tau2 = tau2, rho2 = rho2, varphi = varphi,
-    sigma2 = sigma2, prob.jump = prob.jump, prob.pow = prob.pow, 
-    balanced = balanced, spatial.effect = spatial.effect, 
-    covariates.effect = covariates.effect
+    n.obs, time.points, n.clusts, n.covariates, country, tau2, rho2, varphi, 
+    sigma2, pi.stay, balanced, spatial.effect, covariates.effect
   )
   # Set the country and sample geo-points at random (on-land!) -----------------
   region_sf <- ne_countries_medium[ne_countries_medium$name == country, ]
@@ -103,7 +98,7 @@ dynclusts_sim <- function(n.obs, time.points, n.clusts = 3L, n.covariates = 5L,
     }
   }
   geopoints.out <- sf::st_as_sf(do.call(c, points))
-  # Matrix of geographical coordinates -----------------------------------------
+  # Matrix of geographical coordinates
   coords <- do.call(rbind, lapply(points, `[[`, 1L))
   colnames(coords) <- c("longitude", "latitude")
   # Generate covariates --------------------------------------------------------
@@ -133,73 +128,42 @@ dynclusts_sim <- function(n.obs, time.points, n.clusts = 3L, n.covariates = 5L,
   sigma2 <- matrix(sigma2, nrow = time.points, ncol = n.obs)
   S <- matrix(nrow = time.points, ncol = n.obs) # Cluster allocations
   clusters <- seq_len(n.clusts)
+  # Cluster probabilities
   if (balanced) {
-    # Clusters at time t = 1
-    probs <- rep(n.obs / n.clusts, n.clusts)
-    probs <- probs / sum(probs)
-    S[1,] <- int_sampling(n.clusts, n.obs, probs)
-    theta[1,] <- theta.candidates[S[1,]]
-    # Generate y
-    y[1,] <- rnorm(n.obs, linpred[1,] + theta[1,], sigma2[1,])
-    # Times t = 2, 3, ..., T
-    for (t in 2:time.points) {
-      for (k in clusters) {
-        idx.k <- which(S[t-1,] == k)
-        n.k <- length(idx.k)
-        S[t, idx.k] <- sample(
-          c(k, setdiff(clusters, k)), size = n.k, replace = TRUE,
-          prob = c(1 - prob.jump, prob.jump / 2, prob.jump / 2)
-        )
-      }
-      theta[t,] <- theta.candidates[S[t,]]
-      # Generate y
-      y[t,] <- rnorm(n.obs, linpred[t,] + theta[t,], sigma2[t,])
-    }
+    # All clusters have equal probability
+    p.equal <- rep(1 / n.clusts, n.clusts)
   } else {
-    # Clusters at time t = 1
-    big.clust.idxs <- sort(sample.int(n.obs, round(n.obs * 0.7), replace = F))
-    # Choose at random which cluster is going to be the biggest one
-    big.clust.k <- sample.int(n.clusts, 1L)
-    S[1, big.clust.idxs] <- big.clust.k
-    # Remaining clusters
-    other.clusts.idxs <- setdiff(seq_len(n.obs), big.clust.idxs)
-    other.clusts.k <- setdiff(clusters, big.clust.k)
-    other.clusts.n <- length(other.clusts.idxs)
-    S[1, other.clusts.idxs] <- sample(
-      other.clusts.k, size = other.clusts.n, replace = TRUE
-    )
-    theta[1,] <- theta.candidates[S[1,]]
-    # Generate y
-    y[1,] <- rnorm(n.obs, linpred[1,] + theta[1,], sigma2[1,])
-    # Times t = 2, 3, ..., T
-    for (t in 2:time.points) {
-      # Identify the biggest cluster at time t-1
-      big.clust.k <- which.max(tabulate(S[t-1,]))
-      big.clust.idxs <- which(S[t-1,] == big.clust.k)
-      big.clust.n <- length(big.clust.idxs)
-      # Randomly select the new biggest cluster 
-      other.clusts.k <- setdiff(clusters, big.clust.k)
-      big.clust.k.new <- sample(other.clusts.k, 1L)
-      # Randomly select which observations are going to jump from the
-      # current biggest cluster to the new one
-      big.jump <- as.logical(rbinom(big.clust.n, 1, prob.jump ** prob.pow))
-      big.jump.idx <- big.clust.idxs[big.jump]
-      big.remain.idx <- big.clust.idxs[!big.jump]
-      S[t, big.jump.idx] <- big.clust.k.new
-      S[t, big.remain.idx] <- big.clust.k
-      # Allocate the remaining observations
-      for (k in other.clusts.k) {
-        idx.k <- which(S[t-1,] == k)
-        n.k <- length(idx.k)
-        S[t, idx.k] <- sample(
-          c(k, setdiff(clusters, k)), size = n.k, replace = TRUE,
-          prob = c(1 - prob.jump, prob.jump / 2, prob.jump / 2)
-        )
+    # Probability of the largest cluster
+    p.large <- 0.7 
+    # Probability of the remaining clusters
+    p.rest <- rep((1 - 0.7) / (n.clusts - 1), n.clusts - 1)
+  }
+  # Clusters at time t = 1
+  probs <- if (balanced) p.equal else c(p.rest, p.large)
+  S[1,] <- int_sampling(n.clusts, n.obs, probs)
+  theta[1,] <- theta.candidates[S[1,]]
+  # Generate y
+  y[1,] <- rnorm(n.obs, linpred[1,] + theta[1,], sigma2[1,])
+  # Clusters at times t = 2, 3, ..., T
+  for (tt in 2:time.points) {
+    # Whether the data points should stay in their current clusters
+    clust.stay <- rbinom(n.obs, 1, pi.stay)
+    # Iterate over data points
+    for (ii in seq_len(n.obs)) {
+      if (clust.stay[ii] == 1) {
+        S[tt, ii] <- S[tt - 1, ii] # Remain in the same cluster
+      } else {
+        # Update the probabilities of each cluster
+        probs <- if (!balanced) {
+          if (tt %% 2 == 0) c(p.large, p.rest) else c(p.rest, p.large)
+        } else { p.equal }
+        # Jump to a new cluster with the updated cluster probabilities
+        S[tt, ii] <- int_sampling(n.clusts, 1, probs)
       }
-      theta[t,] <- theta.candidates[S[t,]]
-      # Generate y
-      y[t,] <- rnorm(n.obs, linpred[t,] + theta[t,], sigma2[t,])
     }
+    theta[t,] <- theta.candidates[S[t,]]
+    # Generate y
+    y[t,] <- rnorm(n.obs, linpred[t,] + theta[t,], sigma2[t,])
   }
   # Returns --------------------------------------------------------------------
   out <- list(
