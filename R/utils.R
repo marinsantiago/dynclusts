@@ -113,15 +113,17 @@ input.validation.dynclust <- \(y, coords, X, theta.0, sigma2.0, a.0, b.0,
 }
 
 input.validation.dynclust.sim <- \(n.obs, time.points, n.clusts, n.covariates,
-                                   country, tau2, rho2, varphi, sigma2, pi.stay, 
-                                   balanced, spatial.effect, covariates.effect){
+                                   tau2, rho2, varphi, sigma2, prob.jump, 
+                                   prob.pow, balanced, spatial.effect,
+                                   covariates.effect) {
   
-  for (s in c("tau2", "rho2", "varphi", "sigma2")) {
+  p.scalars <- c("tau2", "rho2", "varphi", "sigma2", "prob.pow")
+  for (s in p.scalars) {
     if (not.psc(get(s))) stop(paste(s, " must be a positive scalar"))
   }
   integers <- c("n.obs", "time.points", "n.covariates", "n.clusts")
   for (i in integers) if (not.int(get(i))) stop(paste(i, " must be an integer"))
   logicals <- c("balanced", "spatial.effect", "covariates.effect")
   for (l in logicals) if (not.logic(get(l))) stop(paste(l, " must be logical"))
-  if (not.unit(pi.stay)) stop("pi.stay must be in (0, 1)")
+  if (not.unit(prob.jump)) stop("prob.jump must be in (0, 1)")
 }

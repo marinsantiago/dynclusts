@@ -14,8 +14,9 @@ dynclusts_sim(
   rho2 = 1,
   varphi = 100,
   sigma2 = 1,
-  pi.stay = 0.75,
-  balanced = FALSE,
+  prob.jump = 0.2,
+  prob.pow = 0.25,
+  balanced = TRUE,
   spatial.effect = TRUE,
   covariates.effect = TRUE
 )
@@ -43,8 +44,11 @@ Default is \code{100}.}
 \item{sigma2}{Sampling variance, assumed to be common across all clusters. 
 Default is \code{1}.}
 
-\item{pi.stay}{Probability that a given station will remain in the same 
-cluster from one time point to another. Default is \code{0.75}.}
+\item{prob.jump}{Probability of jumping, \eqn{\pi_{\text{jump}}}. Default is 
+\code{0.2}.}
+
+\item{prob.pow}{Power to which \code{prob.jump} is elevated to. Default is
+\code{0.25}.}
 
 \item{balanced}{logical. Whether cluster sizes should be balanced or not.}
 
