@@ -161,9 +161,9 @@ dynclusts_sim <- function(n.obs, time.points, n.clusts = 3L, n.covariates = 5L,
         S[tt, ii] <- int_sampling(n.clusts, 1, probs)
       }
     }
-    theta[t,] <- theta.candidates[S[t,]]
+    theta[tt,] <- theta.candidates[S[tt,]]
     # Generate y
-    y[t,] <- rnorm(n.obs, linpred[t,] + theta[t,], sigma2[t,])
+    y[tt,] <- rnorm(n.obs, linpred[tt,] + theta[tt,], sigma2[tt,])
   }
   # Returns --------------------------------------------------------------------
   out <- list(
