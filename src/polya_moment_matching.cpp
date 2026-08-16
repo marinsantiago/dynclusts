@@ -125,3 +125,5 @@ Eigen::MatrixXd rand_polya_proposal(const Eigen::VectorXd & a_vec,
   
   return out;
 }
+
+// -----------------------------------------------------------------------------
