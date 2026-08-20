@@ -36,7 +36,7 @@ devtools::build()
 devtools::install()
 ```
 
-A detailed *changelog* is available [here](https://github.com/marinsantiago/dynclusts/NEWS.md).
+A detailed *changelog* is available [here](https://github.com/marinsantiago/dynclusts/blob/main/NEWS.md).
 
 ## Usage
 
@@ -57,9 +57,9 @@ y <- sapply(s, \(d) d$pm25)
 coords <- sapply(s, \(d) c(d$longitude[1], d$latitude[1])) |> t()
 X <- lapply(
   s, \(d) {
+    mod.windDir <- d$windDir * pi / 180
     cbind(
-      sin(d$windDir * pi / 180), cos(d$windDir * pi / 180),
-      d$windSpeed, d$hum, d$hum ** 2
+      sin(mod.windDir), cos(mod.windDir), d$windSpeed, d$hum, d$hum ** 2
     )
   }
 )
@@ -69,7 +69,8 @@ names(X) <- rownames(coords) <- colnames(y)
 ```
 
 The main routine of the package, `dynclust()`, performs Bayesian nonparametric dynamic 
-clustering through an autoregressive logistic-beta Stirling-gamma process.
+clustering through an autoregressive logistic-beta Stirling-gamma process 
+(this may take a while).
 
 ``` r
 set.seed(1)
