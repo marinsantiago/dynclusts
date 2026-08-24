@@ -43,6 +43,7 @@ A detailed *changelog* is available [here](https://github.com/marinsantiago/dync
 Let's start by loading the Chilean FSP data from Marin et al. (2026+).
 
 ``` r
+library(dynclusts)
 data(chile)
 ```
 
@@ -76,8 +77,8 @@ clustering through an autoregressive logistic-beta Stirling-gamma process
 set.seed(1)
 dynclusts.out <- dynclusts::dynclust(
   y = y, coords = coords, X = X, theta.0 = mean(y), 
-  sigma2.0  = 2 * var(c(y)),a.0 = 0.1, b.0 = 0.1, a.alpha = 1, 
-  b.alpha = 0.25, max.iters = 20000L, burn.in = 10000L, thin = 5L
+  sigma2.0  = 2 * var(c(y)), a.0 = 0.1, b.0 = 0.1, a.alpha = 1, 
+  b.alpha = 0.25, max.iters = 200000L, burn.in = 20000L, thin = 25L
 )
 ```
 
