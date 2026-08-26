@@ -180,5 +180,5 @@ or other dealings in the software.
 
 Marin, S., Loong, B., and Westveld, A. H. (2026+), "Bayesian nonparametric modeling of dynamic pollution clusters through an autoregressive logistic-beta Stirling-gamma process"
 
-Page, G. L., Quintana, F. A., and Dahl, D. B. (2022), "Dependent modeling of temporal sequences of random partitions." *Journal of Computational and Graphical Statistics*, **31**(2):614-627. 
-<doi:10.1080/10618600.2021.1987255>
+Page, G. L., Quintana, F. A., and Dahl, D. B. (2022), "Dependent modeling of temporal sequences of random partitions." *Journal of Computational and Graphical Statistics*, **31**(2):614–627. 
+[doi:10.1080/10618600.2021.1987255](https://doi.org/10.1080/10618600.2021.1987255)
