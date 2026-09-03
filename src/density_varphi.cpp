@@ -57,7 +57,7 @@ Eigen::VectorXf logdens_varphi(const float varphi,
   const float quad_form = gamma_t * K_gamma_tau2;
   
   // Compute log-density -------------------------------------------------------
-  const float logdens = (a_phi - 1.0f) * std::logf(varphi) - b_phi * varphi - 
+  const float logdens = (a_phi - 1.0f) * std::log(varphi) - b_phi * varphi - 
     (logdet_K_check + quad_form) / 2.0f;
   
   // Compute Hadamard product --------------------------------------------------
