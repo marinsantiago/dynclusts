@@ -39,13 +39,13 @@ Eigen::VectorXf logdens_psi(const float psi,
   
   // Pre-compute constants and prepare the returns  ----------------------------
   Eigen::VectorXf out(2); // To store log-density and its gradient
-  const float psi2 = std::powf(psi, 2.0f);
+  const float psi2 = std::pow(psi, 2.0f);
   const float psi2_diff = 1.0f - psi2;
-  const float psi2_diff_sq = std::powf(psi2_diff, 2.0f);
+  const float psi2_diff_sq = std::pow(psi2_diff, 2.0f);
   const float psi2_add = 1.0f + psi2;
   
   // Compute log-density -------------------------------------------------------
-  float logdens = -H1T1 * std::logf(psi2_diff) / 2.0f;
+  float logdens = -H1T1 * std::log(psi2_diff) / 2.0f;
   logdens -= (sum_e1T + psi2_add * sum_e_mid) / (2.0f * psi2_diff);
   logdens += 2.0f * psi * sum_e_dif / (2.0f * psi2_diff);
   
